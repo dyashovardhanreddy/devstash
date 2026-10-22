@@ -611,6 +611,14 @@ Freemium model.
 - **Items:** listed below collections as cards with a **border color** matching their type
 - **Item drawer:** quick view/edit/create without leaving the page
 
+
+### Screenshots
+
+Refer to the screenshots below as a base reference for dashboard. It does not have to be exact. Use it as reference 
+
+- @context/screenshots/dashboard-ui-drawer.png
+- @context/dashboard-ui-main.png
+
 ### Type Colors & Icons
 
 | Type | Color | Swatch | Lucide Icon |
