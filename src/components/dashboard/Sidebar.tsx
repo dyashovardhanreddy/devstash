@@ -6,9 +6,10 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
 import { cn } from "cn";
 
+import { ItemTypeIcon } from "@/components/dashboard/ItemTypeIcon";
 import { Button } from "@/components/ui/button";
-import { getItemTypeIcon } from "@/lib/item-type-icons";
-import { collections, currentUser, items, itemTypes, type Collection } from "@/lib/mock-data";
+import { sortByRecentActivity } from "@/lib/dashboard";
+import { collections, currentUser, itemTypes, type Collection } from "@/lib/mock-data";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -16,16 +17,7 @@ interface SidebarProps {
 }
 
 const favoriteCollections = collections.filter((collection) => collection.isFavorite);
-const recentCollections = collections
-  .filter((collection) => !collection.isFavorite)
-  .sort((a, b) => getLastUsedAt(b) - getLastUsedAt(a));
-
-// Most recent lastUsedAt among a collection's items, until collections track their own activity.
-function getLastUsedAt(collection: Collection): number {
-  return items
-    .filter((item) => item.collectionIds.includes(collection.id) && item.lastUsedAt)
-    .reduce((latest, item) => Math.max(latest, Date.parse(item.lastUsedAt!)), 0);
-}
+const recentCollections = sortByRecentActivity(collections.filter((collection) => !collection.isFavorite));
 
 function getInitials(name: string): string {
   return name
@@ -51,7 +43,6 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto px-2 py-3">
         <SidebarSection title="Types" collapsed={collapsed}>
           {itemTypes.map((type) => {
-            const Icon = getItemTypeIcon(type.icon);
             const href = `/items/${type.slug}`;
             return (
               <SidebarLink
@@ -61,7 +52,7 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
                 active={pathname === href}
                 collapsed={collapsed}
                 onNavigate={onNavigate}
-                icon={<Icon className="size-4" style={{ color: type.color }} />}
+                icon={<ItemTypeIcon icon={type.icon} className="size-4" style={{ color: type.color }} />}
                 trailing={<span className="text-xs text-muted-foreground">{type.itemCount}</span>}
               />
             );
