@@ -2,11 +2,10 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 
 import { ItemTypeIcon } from "@/components/dashboard/ItemTypeIcon";
-import { getCollectionTypes } from "@/lib/dashboard";
-import type { Collection } from "@/lib/mock-data";
+import type { DashboardCollection } from "@/types/collection";
 
-export function CollectionCard({ collection }: { collection: Collection }) {
-  const types = getCollectionTypes(collection);
+export function CollectionCard({ collection }: { collection: DashboardCollection }) {
+  const { types } = collection;
 
   return (
     <Link
@@ -18,7 +17,9 @@ export function CollectionCard({ collection }: { collection: Collection }) {
         <h3 className="truncate font-medium">{collection.name}</h3>
         {collection.isFavorite && <Star className="size-4 shrink-0 fill-yellow-400 text-yellow-400" />}
       </div>
-      <p className="text-sm text-muted-foreground">{collection.itemCount} items</p>
+      <p className="text-sm text-muted-foreground">
+        {collection.itemCount} {collection.itemCount === 1 ? "item" : "items"}
+      </p>
       <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{collection.description}</p>
       <div className="mt-3 flex gap-2">
         {types.map((type) => (

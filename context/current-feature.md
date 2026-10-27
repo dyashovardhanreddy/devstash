@@ -1,6 +1,6 @@
 # Current Feature
 
-Database Seed Script
+Dashboard Collections (Real Data)
 
 ## Status
 
@@ -8,27 +8,21 @@ In Progress
 
 ## Goals
 
-- Create `prisma/seed.ts` to populate the database with sample data for development and demos
-- Seed a demo user:
-  - Email: `demo@devstash.io`, name: `Demo User`
-  - Password `12345678`, hashed with bcryptjs (12 rounds)
-  - `isPro: false`, `emailVerified`: current date
-- Seed the 7 system item types (`isSystem: true`), using Lucide icon names:
-  - snippet (`Code`, `#3b82f6`), prompt (`Sparkles`, `#8b5cf6`), command (`Terminal`, `#f97316`), note (`StickyNote`, `#fde047`), file (`File`, `#6b7280`), image (`Image`, `#ec4899`), link (`Link`, `#10b981`)
-- Seed collections and their items for the demo user:
-  - **React Patterns** (Reusable React patterns and hooks): 3 TypeScript snippets covering custom hooks (useDebounce, useLocalStorage, etc.), component patterns (context providers, compound components), and utility functions
-  - **AI Workflows** (AI prompts and workflow automations): 3 prompts for code review, documentation generation, and refactoring assistance
-  - **DevOps** (Infrastructure and deployment resources): 1 snippet (Docker, CI/CD config), 1 command (deployment scripts), 2 links (real documentation URLs)
-  - **Terminal Commands** (Useful shell commands for everyday development): 4 commands for git operations, Docker, process management, and package manager utilities
-  - **Design Resources** (UI/UX resources and references): 4 links (real URLs) for CSS/Tailwind references, component libraries, design systems, and icon libraries
+- Replace the mock collection data in the dashboard main area with real data from the Neon database via Prisma
+- Create `src/lib/db/collections.ts` with the collection data fetching functions
+- Fetch collections directly in the server component (no client-side fetching)
+- Keep showing the 6 most recent collection cards with the current design
+- Derive each collection card's border color from the item type used most in that collection
+- Show small icons for every item type in a collection
+- Update the collection stats display to use real counts
 
 ## Notes
 
-- Spec: @context/features/seed-spec.md
-- Item type slugs follow the plural form from the System Type Seed in @context/project-overview.md (`snippets`, `prompts`, …)
-- Set `contentType` to match the type: `TEXT` for snippet/prompt/command/note, `URL` for link
-- Use Prisma 7 seeding config (seed command in `prisma.config.ts`) and the existing Neon driver adapter setup
-- Seed only the dev database branch; never modify schema outside migrations
+- Spec: @context/features/dashboard-collections-spec.md
+- Collection data currently comes from `src/lib/mock-data.ts`; replace that usage for collections only
+- Do not wire up the items below the collections yet; that comes in a later feature
+- Keep the existing layout and design; `context/screenshots/dashboard-ui-main.png` is a reference if needed
+- Always scope queries by `userId` (use the seeded demo user until auth is in place)
 
 ## History
 
@@ -39,3 +33,4 @@ In Progress
 - Dashboard UI Phase 2: collapsible sidebar with toggle in the top bar, mobile drawer (shadcn Sheet), item type links to `/items/[type]`, favorite and recent collections, user avatar area
 - Dashboard UI Phase 3: main area with stats cards, recent collections, pinned items, and 10 most recent items (commit `8c7a375`)
 - Prisma + Neon PostgreSQL setup: Prisma 7.10.1 with the Neon driver adapter, initial schema with Auth.js models, indexes and cascade deletes, initial migration `20261027001053_init` applied to the dev branch, `scripts/test-db.ts` connection test, `db:studio` script
+- Database seed script: `prisma/seed.ts` seeds 7 system item types, demo user `demo@devstash.io` (bcryptjs, 12 rounds), and 5 collections with 18 items; re-runnable via `npm run db:seed`; `scripts/test-db.ts` verifies the seeded demo data (commit `2602d56`)

@@ -1,6 +1,7 @@
-// Dashboard data helpers over the mock data. Replace with Prisma queries once the database is in place.
+// Dashboard data helpers over the mock data. Collections now come from the database (src/lib/db/collections.ts).
 
-import { collections, items, itemTypes, type Collection, type Item, type ItemType } from "@/lib/mock-data";
+import { items, itemTypes, type Collection, type Item, type ItemType } from "@/lib/mock-data";
+import type { CollectionStats } from "@/types/collection";
 
 const itemTypesById = new Map(itemTypes.map((type) => [type.id, type]));
 
@@ -24,24 +25,6 @@ export function sortByRecentActivity(list: Collection[]): Collection[] {
   return [...list].sort((a, b) => getCollectionLastUsedAt(b) - getCollectionLastUsedAt(a));
 }
 
-// Types present in a collection, most common first. Falls back to the default type when empty.
-export function getCollectionTypes(collection: Collection): ItemType[] {
-  const counts = new Map<string, number>();
-  for (const item of getCollectionItems(collection)) {
-    counts.set(item.itemTypeId, (counts.get(item.itemTypeId) ?? 0) + 1);
-  }
-  if (counts.size === 0) counts.set(collection.defaultTypeId, 1);
-
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([id]) => getItemType(id))
-    .filter((type): type is ItemType => type !== undefined);
-}
-
-export function getRecentCollections(limit: number): Collection[] {
-  return sortByRecentActivity(collections).slice(0, limit);
-}
-
 export function getPinnedItems(): Item[] {
   return items.filter((item) => item.isPinned);
 }
@@ -53,18 +36,16 @@ export function getRecentItems(limit: number): Item[] {
     .slice(0, limit);
 }
 
-export interface DashboardStats {
+export interface ItemStats {
   items: number;
-  collections: number;
   favoriteItems: number;
-  favoriteCollections: number;
 }
 
-export function getDashboardStats(): DashboardStats {
+export type DashboardStats = ItemStats & CollectionStats;
+
+export function getItemStats(): ItemStats {
   return {
     items: items.length,
-    collections: collections.length,
     favoriteItems: items.filter((item) => item.isFavorite).length,
-    favoriteCollections: collections.filter((collection) => collection.isFavorite).length,
   };
 }

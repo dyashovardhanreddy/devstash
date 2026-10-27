@@ -1,17 +1,18 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { Clock, Pin } from "lucide-react";
 
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { getDashboardStats, getPinnedItems, getRecentCollections, getRecentItems } from "@/lib/dashboard";
+import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/dashboard";
+import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import { getCurrentUserId } from "@/lib/db/users";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
 
 export default function DashboardPage() {
-  const recentCollections = getRecentCollections(RECENT_COLLECTIONS_LIMIT);
   const pinnedItems = getPinnedItems();
   const recentItems = getRecentItems(RECENT_ITEMS_LIMIT);
 
@@ -22,7 +23,9 @@ export default function DashboardPage() {
         <p className="mt-1 text-muted-foreground">Your developer knowledge hub</p>
       </div>
 
-      <StatsCards stats={getDashboardStats()} />
+      <Suspense fallback={<SkeletonGrid count={4} className="grid-cols-2 lg:grid-cols-4" cardClassName="h-22" />}>
+        <DashboardStats />
+      </Suspense>
 
       <section>
         <div className="mb-4 flex items-center justify-between">
@@ -31,11 +34,17 @@ export default function DashboardPage() {
             View all
           </Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {recentCollections.map((collection) => (
-            <CollectionCard key={collection.id} collection={collection} />
-          ))}
-        </div>
+        <Suspense
+          fallback={
+            <SkeletonGrid
+              count={RECENT_COLLECTIONS_LIMIT}
+              className="sm:grid-cols-2 xl:grid-cols-3"
+              cardClassName="h-38"
+            />
+          }
+        >
+          <RecentCollections />
+        </Suspense>
       </section>
 
       {pinnedItems.length > 0 && (
@@ -51,6 +60,46 @@ export default function DashboardPage() {
           <ItemCard key={item.id} item={item} />
         ))}
       </ItemSection>
+    </div>
+  );
+}
+
+async function DashboardStats() {
+  const userId = await getCurrentUserId();
+  const collectionStats = await getCollectionStats(userId);
+
+  return <StatsCards stats={{ ...getItemStats(), ...collectionStats }} />;
+}
+
+async function RecentCollections() {
+  const userId = await getCurrentUserId();
+  const collections = await getRecentCollections(userId, RECENT_COLLECTIONS_LIMIT);
+
+  if (collections.length === 0) {
+    return <p className="text-sm text-muted-foreground">No collections yet.</p>;
+  }
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {collections.map((collection) => (
+        <CollectionCard key={collection.id} collection={collection} />
+      ))}
+    </div>
+  );
+}
+
+interface SkeletonGridProps {
+  count: number;
+  className: string;
+  cardClassName: string;
+}
+
+function SkeletonGrid({ count, className, cardClassName }: SkeletonGridProps) {
+  return (
+    <div className={`grid gap-4 ${className}`}>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className={`animate-pulse rounded-xl border border-border bg-card ${cardClassName}`} />
+      ))}
     </div>
   );
 }
