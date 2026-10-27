@@ -1,6 +1,9 @@
 import { Folder, FolderHeart, Layers, Star, type LucideIcon } from "lucide-react";
 
-import type { DashboardStats } from "@/lib/dashboard";
+import type { CollectionStats } from "@/types/collection";
+import type { ItemStats } from "@/types/item";
+
+type DashboardStats = ItemStats & CollectionStats;
 
 interface StatCard {
   label: string;

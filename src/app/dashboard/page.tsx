@@ -5,17 +5,14 @@ import { Clock, Pin } from "lucide-react";
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/dashboard";
 import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/db/items";
 import { getCurrentUserId } from "@/lib/db/users";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
 
 export default function DashboardPage() {
-  const pinnedItems = getPinnedItems();
-  const recentItems = getRecentItems(RECENT_ITEMS_LIMIT);
-
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-8">
       <div>
@@ -47,28 +44,52 @@ export default function DashboardPage() {
         </Suspense>
       </section>
 
-      {pinnedItems.length > 0 && (
-        <ItemSection title="Pinned" icon={<Pin className="size-4" />}>
-          {pinnedItems.map((item) => (
-            <ItemCard key={item.id} item={item} />
-          ))}
-        </ItemSection>
-      )}
+      <Suspense fallback={null}>
+        <PinnedItems />
+      </Suspense>
 
-      <ItemSection title="Recent" icon={<Clock className="size-4" />}>
-        {recentItems.map((item) => (
-          <ItemCard key={item.id} item={item} />
-        ))}
-      </ItemSection>
+      <Suspense fallback={<SkeletonList count={RECENT_ITEMS_LIMIT} />}>
+        <RecentItems />
+      </Suspense>
     </div>
   );
 }
 
 async function DashboardStats() {
   const userId = await getCurrentUserId();
-  const collectionStats = await getCollectionStats(userId);
+  const [itemStats, collectionStats] = await Promise.all([getItemStats(userId), getCollectionStats(userId)]);
 
-  return <StatsCards stats={{ ...getItemStats(), ...collectionStats }} />;
+  return <StatsCards stats={{ ...itemStats, ...collectionStats }} />;
+}
+
+async function PinnedItems() {
+  const userId = await getCurrentUserId();
+  const items = await getPinnedItems(userId);
+
+  if (items.length === 0) return null;
+
+  return (
+    <ItemSection title="Pinned" icon={<Pin className="size-4" />}>
+      {items.map((item) => (
+        <ItemCard key={item.id} item={item} />
+      ))}
+    </ItemSection>
+  );
+}
+
+async function RecentItems() {
+  const userId = await getCurrentUserId();
+  const items = await getRecentItems(userId, RECENT_ITEMS_LIMIT);
+
+  return (
+    <ItemSection title="Recent" icon={<Clock className="size-4" />}>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No items yet.</p>
+      ) : (
+        items.map((item) => <ItemCard key={item.id} item={item} />)
+      )}
+    </ItemSection>
+  );
 }
 
 async function RecentCollections() {
@@ -99,6 +120,16 @@ function SkeletonGrid({ count, className, cardClassName }: SkeletonGridProps) {
     <div className={`grid gap-4 ${className}`}>
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className={`animate-pulse rounded-xl border border-border bg-card ${cardClassName}`} />
+      ))}
+    </div>
+  );
+}
+
+function SkeletonList({ count }: { count: number }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="h-22 animate-pulse rounded-xl border border-border bg-card" />
       ))}
     </div>
   );
