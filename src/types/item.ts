@@ -11,6 +11,11 @@ export interface DashboardItem {
   type: CollectionItemType;
 }
 
+export interface SidebarItemType extends CollectionItemType {
+  slug: string;
+  itemCount: number;
+}
+
 export interface ItemStats {
   items: number;
   favoriteItems: number;

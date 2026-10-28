@@ -6,11 +6,17 @@ import { cn } from "cn";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import type { SidebarData } from "@/types/sidebar";
 
 // Matches Tailwind's `md` breakpoint, where the sidebar stops being a drawer.
 const DESKTOP_QUERY = "(min-width: 48rem)";
 
-export function DashboardShell({ children }: { children: ReactNode }) {
+interface DashboardShellProps {
+  sidebarData: Promise<SidebarData>;
+  children: ReactNode;
+}
+
+export function DashboardShell({ sidebarData, children }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -30,13 +36,13 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           collapsed ? "w-16" : "w-64",
         )}
       >
-        <Sidebar collapsed={collapsed} />
+        <Sidebar data={sidebarData} collapsed={collapsed} />
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-72 gap-0 p-0 md:hidden" showCloseButton={false}>
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <Sidebar onNavigate={() => setMobileOpen(false)} />
+          <Sidebar data={sidebarData} onNavigate={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>
 

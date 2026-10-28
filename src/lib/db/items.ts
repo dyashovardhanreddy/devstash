@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { DashboardItem, ItemStats } from "@/types/item";
+import type { DashboardItem, ItemStats, SidebarItemType } from "@/types/item";
 
 const DASHBOARD_ITEM_SELECT = {
   id: true,
@@ -37,6 +37,24 @@ export async function getRecentItems(userId: string, limit: number): Promise<Das
     select: DASHBOARD_ITEM_SELECT,
   });
   return items.map(toDashboardItem);
+}
+
+// System item types with the user's item count for each. Ordered by id: the seed creates them in display order
+// and cuid ids sort by creation time.
+export async function getSystemItemTypes(userId: string): Promise<SidebarItemType[]> {
+  const types = await prisma.itemType.findMany({
+    where: { isSystem: true },
+    orderBy: { id: "asc" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      icon: true,
+      color: true,
+      _count: { select: { items: { where: { userId } } } },
+    },
+  });
+  return types.map(({ _count, ...type }) => ({ ...type, itemCount: _count.items }));
 }
 
 export async function getItemStats(userId: string): Promise<ItemStats> {

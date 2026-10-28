@@ -15,6 +15,11 @@ export interface DashboardCollection {
   types: CollectionItemType[];
 }
 
+export interface SidebarCollections {
+  favorites: DashboardCollection[];
+  recent: DashboardCollection[];
+}
+
 export interface CollectionStats {
   collections: number;
   favoriteCollections: number;

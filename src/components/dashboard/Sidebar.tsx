@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { Suspense, use, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
@@ -8,16 +8,17 @@ import { cn } from "cn";
 
 import { ItemTypeIcon } from "@/components/dashboard/ItemTypeIcon";
 import { Button } from "@/components/ui/button";
-import { sortByRecentActivity } from "@/lib/dashboard";
-import { collections, currentUser, itemTypes, type Collection } from "@/lib/mock-data";
+import { currentUser } from "@/lib/mock-data";
+import type { DashboardCollection } from "@/types/collection";
+import type { SidebarData } from "@/types/sidebar";
+
+const SKELETON_ROWS = 7;
 
 interface SidebarProps {
+  data: Promise<SidebarData>;
   collapsed?: boolean;
   onNavigate?: () => void;
 }
-
-const favoriteCollections = collections.filter((collection) => collection.isFavorite);
-const recentCollections = sortByRecentActivity(collections.filter((collection) => !collection.isFavorite));
 
 function getInitials(name: string): string {
   return name
@@ -28,9 +29,7 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
-  const pathname = usePathname();
-
+export function Sidebar({ data, collapsed = false, onNavigate }: SidebarProps) {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className={cn("flex h-14 shrink-0 items-center gap-2 px-4", collapsed && "justify-center px-0")}>
@@ -41,51 +40,9 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-3">
-        <SidebarSection title="Types" collapsed={collapsed}>
-          {itemTypes.map((type) => {
-            const href = `/items/${type.slug}`;
-            return (
-              <SidebarLink
-                key={type.id}
-                href={href}
-                label={type.slug}
-                active={pathname === href}
-                collapsed={collapsed}
-                onNavigate={onNavigate}
-                icon={<ItemTypeIcon icon={type.icon} className="size-4" style={{ color: type.color }} />}
-                trailing={<span className="text-xs text-muted-foreground">{type.itemCount}</span>}
-              />
-            );
-          })}
-        </SidebarSection>
-
-        {!collapsed && (
-          <>
-            <div className="my-3 border-t border-sidebar-border" />
-            <SidebarSection title="Collections">
-              <SidebarGroupLabel>Favorites</SidebarGroupLabel>
-              {favoriteCollections.map((collection) => (
-                <CollectionLink
-                  key={collection.id}
-                  collection={collection}
-                  active={pathname === `/collections/${collection.id}`}
-                  onNavigate={onNavigate}
-                  trailing={<Star className="size-3.5 fill-yellow-400 text-yellow-400" />}
-                />
-              ))}
-              <SidebarGroupLabel>Recent</SidebarGroupLabel>
-              {recentCollections.map((collection) => (
-                <CollectionLink
-                  key={collection.id}
-                  collection={collection}
-                  active={pathname === `/collections/${collection.id}`}
-                  onNavigate={onNavigate}
-                  trailing={<span className="text-xs text-muted-foreground">{collection.itemCount}</span>}
-                />
-              ))}
-            </SidebarSection>
-          </>
-        )}
+        <Suspense fallback={<SidebarNavSkeleton />}>
+          <SidebarNav data={data} collapsed={collapsed} onNavigate={onNavigate} />
+        </Suspense>
       </nav>
 
       <div
@@ -113,6 +70,98 @@ export function Sidebar({ collapsed = false, onNavigate }: SidebarProps) {
         )}
       </div>
     </div>
+  );
+}
+
+interface SidebarNavProps {
+  data: Promise<SidebarData>;
+  collapsed: boolean;
+  onNavigate?: () => void;
+}
+
+function SidebarNav({ data, collapsed, onNavigate }: SidebarNavProps) {
+  const { itemTypes, collections } = use(data);
+  const pathname = usePathname();
+
+  return (
+    <>
+      <SidebarSection title="Types" collapsed={collapsed}>
+        {itemTypes.map((type) => {
+          const href = `/items/${type.slug}`;
+          return (
+            <SidebarLink
+              key={type.id}
+              href={href}
+              label={type.slug}
+              active={pathname === href}
+              collapsed={collapsed}
+              onNavigate={onNavigate}
+              icon={<ItemTypeIcon icon={type.icon} className="size-4" style={{ color: type.color }} />}
+              trailing={<span className="text-xs text-muted-foreground">{type.itemCount}</span>}
+            />
+          );
+        })}
+      </SidebarSection>
+
+      {!collapsed && (
+        <>
+          <div className="my-3 border-t border-sidebar-border" />
+          <SidebarSection title="Collections">
+            {collections.favorites.length > 0 && <SidebarGroupLabel>Favorites</SidebarGroupLabel>}
+            {collections.favorites.map((collection) => (
+              <CollectionLink
+                key={collection.id}
+                collection={collection}
+                icon={<Folder className="size-4 text-muted-foreground" />}
+                active={pathname === `/collections/${collection.id}`}
+                onNavigate={onNavigate}
+                trailing={<Star className="size-3.5 fill-yellow-400 text-yellow-400" />}
+              />
+            ))}
+            {collections.recent.length > 0 && <SidebarGroupLabel>Recent</SidebarGroupLabel>}
+            {collections.recent.map((collection) => (
+              <CollectionLink
+                key={collection.id}
+                collection={collection}
+                icon={<TypeDot color={collection.types[0]?.color} />}
+                active={pathname === `/collections/${collection.id}`}
+                onNavigate={onNavigate}
+                trailing={<span className="text-xs text-muted-foreground">{collection.itemCount}</span>}
+              />
+            ))}
+            <Link
+              href="/collections"
+              onClick={onNavigate}
+              className="px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              View all collections
+            </Link>
+          </SidebarSection>
+        </>
+      )}
+    </>
+  );
+}
+
+function SidebarNavSkeleton() {
+  return (
+    <div className="flex flex-col gap-2 px-2">
+      {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+        <div key={i} className="h-6 animate-pulse rounded-md bg-sidebar-accent" />
+      ))}
+    </div>
+  );
+}
+
+// Colored circle for the collection's most-used item type; gray when the collection is empty.
+function TypeDot({ color }: { color?: string }) {
+  return (
+    <span className="flex size-4 shrink-0 items-center justify-center">
+      <span
+        className={cn("size-2.5 rounded-full", !color && "bg-muted-foreground")}
+        style={color ? { backgroundColor: color } : undefined}
+      />
+    </span>
   );
 }
 
@@ -188,18 +237,19 @@ function SidebarLink({ href, label, icon, trailing, active, collapsed = false, o
 }
 
 interface CollectionLinkProps {
-  collection: Collection;
+  collection: DashboardCollection;
+  icon: ReactNode;
   trailing: ReactNode;
   active: boolean;
   onNavigate?: () => void;
 }
 
-function CollectionLink({ collection, trailing, active, onNavigate }: CollectionLinkProps) {
+function CollectionLink({ collection, icon, trailing, active, onNavigate }: CollectionLinkProps) {
   return (
     <SidebarLink
       href={`/collections/${collection.id}`}
       label={collection.name}
-      icon={<Folder className="size-4 text-muted-foreground" />}
+      icon={icon}
       trailing={trailing}
       active={active}
       onNavigate={onNavigate}
