@@ -22,12 +22,15 @@ interface SeedItem {
   content?: string;
   language?: string;
   url?: string;
+  isPinned?: boolean;
+  isFavorite?: boolean;
 }
 
 interface SeedCollection {
   name: string;
   description: string;
   defaultType: SystemTypeName;
+  isFavorite?: boolean;
   items: SeedItem[];
 }
 
@@ -42,12 +45,15 @@ const COLLECTIONS: SeedCollection[] = [
     name: "React Patterns",
     description: "Reusable React patterns and hooks",
     defaultType: "snippet",
+    isFavorite: true,
     items: [
       {
         type: "snippet",
         title: "useDebounce and useLocalStorage hooks",
         description: "Debounce a changing value and persist state to localStorage",
         language: "typescript",
+        isPinned: true,
+        isFavorite: true,
         content: `import { useEffect, useState } from "react";
 
 export function useDebounce<T>(value: T, delay = 300): T {
@@ -150,11 +156,13 @@ export function formatRelativeTime(date: Date): string {
     name: "AI Workflows",
     description: "AI prompts and workflow automations",
     defaultType: "prompt",
+    isFavorite: true,
     items: [
       {
         type: "prompt",
         title: "Code review",
         description: "Thorough review focused on bugs, security, and readability",
+        isPinned: true,
         content: `You are a senior engineer reviewing a pull request.
 
 Review the code below and report:
@@ -242,6 +250,7 @@ CMD ["node", "server.js"]`,
         title: "Deploy with migrations",
         description: "Apply pending Prisma migrations, then build and start",
         language: "bash",
+        isPinned: true,
         content: `npx prisma migrate deploy && npm run build && npm run start`,
       },
       {
@@ -262,12 +271,14 @@ CMD ["node", "server.js"]`,
     name: "Terminal Commands",
     description: "Useful shell commands for everyday development",
     defaultType: "command",
+    isFavorite: true,
     items: [
       {
         type: "command",
         title: "Undo last commit, keep changes",
         description: "Move HEAD back one commit and keep changes staged",
         language: "bash",
+        isFavorite: true,
         content: `git reset --soft HEAD~1`,
       },
       {
@@ -370,6 +381,7 @@ async function seedCollections(userId: string, typeIds: Map<SystemTypeName, stri
       data: {
         name: collection.name,
         description: collection.description,
+        isFavorite: collection.isFavorite,
         userId,
         defaultTypeId: typeIds.get(collection.defaultType),
       },
@@ -384,6 +396,8 @@ async function seedCollections(userId: string, typeIds: Map<SystemTypeName, stri
           content: item.content,
           language: item.language,
           url: item.url,
+          isPinned: item.isPinned,
+          isFavorite: item.isFavorite,
           userId,
           itemTypeId: typeIds.get(item.type)!,
           collections: { create: { collectionId: created.id } },
