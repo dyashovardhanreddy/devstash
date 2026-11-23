@@ -10,6 +10,6 @@ export default defineConfig({
   datasource: {
     // The CLI (migrations) needs Neon's direct, non-pooled connection.
     // Not using env() so `prisma generate` works without a database URL.
-    url: process.env.DATABASE_URL_UNPOOLED,
+    url: process.env.DATABASE_URL,
   },
 });
