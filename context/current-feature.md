@@ -4,7 +4,7 @@ Stats & Sidebar (Real Data)
 
 ## Status
 
-Not Started
+Completed
 
 ## Goals
 
@@ -35,3 +35,5 @@ Not Started
 - Database seed script: `prisma/seed.ts` seeds 7 system item types, demo user `demo@devstash.io` (bcryptjs, 12 rounds), and 5 collections with 18 items; re-runnable via `npm run db:seed`; `scripts/test-db.ts` verifies the seeded demo data (commit `2602d56`)
 - Dashboard collections from the database: `src/lib/db/collections.ts` (recent collections, collection stats) and `src/lib/db/users.ts` (demo user as current user until auth), collection cards use the most-used item type for the border color and show icons for all types, collection stats from Prisma, stats and collections streamed with Suspense skeletons; items remain mock data (commit `821a366`)
 - Dashboard items from the database: `src/lib/db/items.ts` (pinned items, recent items, item stats) and `src/types/item.ts`, item cards use their item type for the icon and border color and show tags, pinned section renders nothing when empty, recent items ordered by `lastUsedAt` then `createdAt`, item stats from Prisma, pinned and recent items streamed with Suspense; mock item helpers removed from `src/lib/dashboard.ts` (sidebar still uses mock data) (commit `8aa60d1`)
+- Seed data update: 3 pinned items, 2 favorite items, and 3 favorite collections (collections have no pinned field) so the Pinned section and favorites show on the dashboard; reseeded into a new Neon dev branch after the old one was auto-deleted, with `20261027001053_init` applied via `prisma migrate deploy` (commit `72386ae`)
+- Stats & sidebar from the database: sidebar lists system item types with icons and per-user item counts (`getSystemItemTypes` in `src/lib/db/items.ts`), linking to `/items/[slug]`; favorite collections with stars and up to 5 recent collections with a colored dot for the most-used item type (`getSidebarCollections` in `src/lib/db/collections.ts`); "View all collections" link to `/collections`; `src/lib/db/sidebar.ts` loads the data in the dashboard layout and the client sidebar reads the promise with `use()` behind a Suspense skeleton; dashboard stats confirmed from Prisma; sidebar user area still uses mock data and `src/lib/dashboard.ts` is now unused (commit `d31fb3f`)
